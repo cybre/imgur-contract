@@ -25,7 +25,7 @@ msgFailed = "Upload failed, try again later."
 clientId = "c7544afd27262f4"
 clientSecret = "c47da11193c858b91372599685736fa8d24635ec"
 
-# Initialize Imgur
+# Initialize PyImgur
 client = pyimgur.Imgur(client_id=clientId, client_secret=clientSecret)
 
 # Notification icons
