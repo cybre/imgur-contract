@@ -1,0 +1,7 @@
+[Contractor Entry]
+Name=Upload to Imgur
+Icon=uploadtoimgur
+Description=Upload to Imgur
+MimeType=image
+Exec=python /usr/share/ImgurContract/upload.py %U
+Gettext-Domain=pantheon-files
