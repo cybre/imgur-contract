@@ -19,6 +19,7 @@ msgUploading = "Uploading..."
 msgOneImage = "Your image has been uploaded."
 msgMultipleImages = "You images have been uploaded."
 msgClipboard = "The link has been copied to your clipboard!"
+msgFailed = "Upload failed, try again later."
 
 # Auth
 clientId = "c7544afd27262f4"
@@ -26,6 +27,11 @@ clientSecret = "c47da11193c858b91372599685736fa8d24635ec"
 
 # Initialize Imgur
 client = pyimgur.Imgur(client_id=clientId, client_secret=clientSecret)
+
+# Notification icons
+iconInfo = "help-info"
+iconError = "error"
+iconUpload = "go-up"
 
 
 class ImgurUploader:
@@ -36,6 +42,7 @@ class ImgurUploader:
 
         # Initialize the notification daemon
         Notify.init(appName)
+        self.notification = Notify.Notification.new("", "", "")
 
         if len(args) == 1:
             return
@@ -45,34 +52,49 @@ class ImgurUploader:
                     continue
                 type = imghdr.what(file)
                 if not type:
-                    self.notify(appName, file + " " + msgNotAnImage)
+                    self.notify(appName, file + " " + msgNotAnImage, iconError)
                     sys.exit()
                 else:
                     if type not in allowedTypes:
-                        self.notify(appName, type + " " + msgNotAllowed + file)
+                        self.notify(appName, type + " " + msgNotAllowed + file, iconError)
                         sys.exit()
                     else:
                         images.append(file)
 
         self.upload(images)
 
-    def notify(self, messageOne, messageTwo=None):
-        notification = Notify.Notification.new(messageOne, messageTwo, 'info')
-        notification.show()
+    def notify(self, messageOne, messageTwo, icon):
+        self.notification.update(messageOne, messageTwo, icon)
+        self.notification.show()
 
     def upload(self, images):
-        self.notify(appName, msgUploading)
+        self.notify(appName, msgUploading, iconInfo)
         ids = []
+        numOfImages = len(images)
+        currImage = 0
+
         for image in images:
-            uploadedImages = client.upload_image(image)
+            try:
+                uploadedImages = client.upload_image(image)
+            except:
+                self.notify(appName, msgFailed, iconError)
+
             ids.append(uploadedImages.id)
+
+            if numOfImages > 1:
+                currImage += 1
+                left = numOfImages - currImage
+                msgProgress = str(currImage) + " out of " + str(numOfImages) + " images uploaded, " + str(left) + " left."
+                self.notify(appName, msgProgress, iconUpload)
+
         if len(ids) > 1:
             album = client.create_album(images=ids)
             url = album.link
-            self.notify(msgMultipleImages, msgClipboard)
+            self.notify(msgMultipleImages, msgClipboard, iconInfo)
         else:
             url = uploadedImages.link
-            self.notify(msgOneImage, msgClipboard)
+            self.notify(msgOneImage, msgClipboard, iconInfo)
+
         self.setClipboard(url)
 
     def setClipboard(self, url):
