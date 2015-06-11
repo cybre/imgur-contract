@@ -63,8 +63,9 @@ class ImgurUploader:
 
         self.upload(images)
 
-    def notify(self, messageOne, messageTwo, icon):
+    def notify(self, messageOne, messageTwo, icon, timeout=30000):
         self.notification.update(messageOne, messageTwo, icon)
+        self.notification.set_timeout(timeout)
         self.notification.show()
 
     def upload(self, images):
@@ -90,10 +91,10 @@ class ImgurUploader:
         if len(ids) > 1:
             album = client.create_album(images=ids)
             url = album.link
-            self.notify(msgMultipleImages, msgClipboard, iconInfo)
+            self.notify(msgMultipleImages, msgClipboard, iconInfo, 3000)
         else:
             url = uploadedImages.link
-            self.notify(msgOneImage, msgClipboard, iconInfo)
+            self.notify(msgOneImage, msgClipboard, iconInfo, 3000)
 
         self.setClipboard(url)
 
