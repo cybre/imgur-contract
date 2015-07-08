@@ -63,7 +63,7 @@ class ImgurUploader:
 
         self.upload(images)
 
-    def notify(self, messageOne, messageTwo, icon, timeout=30000):
+    def notify(self, messageOne, messageTwo, icon, timeout=5000):
         try:
             self.notification.update(messageOne, messageTwo, icon)
             self.notification.set_timeout(timeout)
