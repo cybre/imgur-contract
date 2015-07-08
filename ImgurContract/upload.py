@@ -64,9 +64,12 @@ class ImgurUploader:
         self.upload(images)
 
     def notify(self, messageOne, messageTwo, icon, timeout=30000):
-        self.notification.update(messageOne, messageTwo, icon)
-        self.notification.set_timeout(timeout)
-        self.notification.show()
+        try:
+            self.notification.update(messageOne, messageTwo, icon)
+            self.notification.set_timeout(timeout)
+            self.notification.show()
+        except:
+            pass
 
     def upload(self, images):
         self.notify(appName, msgUploading, iconInfo)
