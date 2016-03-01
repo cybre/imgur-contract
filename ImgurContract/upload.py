@@ -73,19 +73,20 @@ class ImgurUploader:
 
         self.upload (images)
 
-    def notify (self, notification_title, notification_body, icon, new = False, timeout = 5000):
+    def notify (self, notification_title, notification_body, icon, new, timeout = 5000):
+        if new:
+            Notify.Notification.new (notification_title, notification_body, icon).show ()
+            pass
+        self.notification.update (notification_title, notification_body, icon)
+        self.notification.set_timeout (timeout)
         try:
-            if new:
-                Notify.Notification.new (notification_title, notification_body, icon).show ()
-                pass
-            self.notification.update (notification_title, notification_body, icon)
-            self.notification.set_timeout (timeout)
             self.notification.show ()
         except:
+            print "Unable to show notification."
             pass
 
     def upload (self, images):
-        self.notify (app_name, msg_uploading, icon_info)
+        self.notify (app_name, msg_uploading, icon_info, False, 3000)
         imgur_ids = []
         number_of_images = len (images)
         current_image = 0
@@ -103,7 +104,7 @@ class ImgurUploader:
                 left = number_of_images - current_image
                 msg_progress = "{} out of {} images uploaded, {} left.".format (
                     str (current_image), str (number_of_images), str (left))
-                self.notify (app_name, msg_progress, icon_upload)
+                self.notify (app_name, msg_progress, icon_upload, False)
 
         if len (imgur_ids) > 1:
             album = client.create_album (images = imgur_ids)
