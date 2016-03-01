@@ -5,7 +5,8 @@ import os
 import inspect
 import imghdr
 
-cmd_subfolder = os.path.realpath (os.path.abspath (os.path.join (os.path.split (inspect.getfile (inspect.currentframe ()))[0], "modules")))
+cmd_subfolder = os.path.realpath (os.path.abspath (os.path.join (os.path.split (
+    inspect.getfile (inspect.currentframe ()))[0], "modules")))
 if cmd_subfolder not in sys.path:
     sys.path.insert (0, cmd_subfolder)
 
@@ -13,13 +14,14 @@ import pyimgur
 
 app_name = "Imgur Uploader"
 
-msg_not_an_image        = "is not an image."
+msg_not_an_image        = "is not an image. Skipping."
 msg_not_allowed         = "is not an allowed file type. Skipping."
 msg_uploading           = "Uploading..."
 msg_one_image           = "Your image has been uploaded."
 msg_multiple_images     = "You images have been uploaded."
 msg_copied_to_clipboard = "The link has been copied to your clipboard!"
 msg_upload_failed       = "Upload failed, try again later."
+msg_ommited             = "Some files were ommited."
 
 # Auth
 client_id     = "c7544afd27262f4"
@@ -39,32 +41,43 @@ class ImgurUploader:
 
         allowed_types = ("jpeg", "jpg", "gif", "png", "apng", "tiff", "pdf", "xcf")
         images = []
+        ommited = False
 
         # Initialize the notification daemon
         Notify.init (app_name)
         self.notification = Notify.Notification.new ("", "", "")
 
         if len (args) == 1:
-            return "Missing file path"
-        else:
-            for file in args:
-                if file == args[0] or file == "":
-                    continue
-                type = imghdr.what (file)
-                if not type:
-                    self.notify (app_name, "{} {}".format (file, msg_not_an_image), icon_error)
-                    sys.exit ()
-                else:
-                    if type not in allowed_types:
-                        self.notify (app_name, "{} {}\n{}".format (type, msg_not_allowed, file), icon_error)
-                        sys.exit ()
-                    else:
-                        images.append (file)
+            sys.exit ("Missing file path")
+
+        for file in args:
+            if file == args[0] or file == "":
+                continue
+
+            type = imghdr.what (file)
+
+            if not type:
+                print "{} {}".format (file, msg_not_an_image)
+                ommited = True
+                continue
+
+            if type not in allowed_types:
+                print "{}: {} {}".format (file, type, msg_not_allowed)
+                ommited = True
+                continue
+
+            images.append (file)
+
+        if ommited:
+            self.notify (app_name, msg_ommited, icon_error, True)
 
         self.upload (images)
 
-    def notify (self, notification_title, notification_body, icon, timeout=5000):
+    def notify (self, notification_title, notification_body, icon, new = False, timeout = 5000):
         try:
+            if new:
+                Notify.Notification.new (notification_title, notification_body, icon).show ()
+                pass
             self.notification.update (notification_title, notification_body, icon)
             self.notification.set_timeout (timeout)
             self.notification.show ()
@@ -95,10 +108,10 @@ class ImgurUploader:
         if len (imgur_ids) > 1:
             album = client.create_album (images = imgur_ids)
             url = album.link
-            self.notify (msg_multiple_images, msg_copied_to_clipboard, icon_info, 3000)
+            self.notify (msg_multiple_images, msg_copied_to_clipboard, icon_info, False, 3000)
         else:
             url = uploaded_images.link
-            self.notify (msg_one_image, msg_copied_to_clipboard, icon_info, 3000)
+            self.notify (msg_one_image, msg_copied_to_clipboard, icon_info, False, 3000)
 
         self.set_clipboard (url)
 
