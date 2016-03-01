@@ -1,112 +1,113 @@
 #!/usr/bin/python
+from gi.repository import Gtk, Gdk, Notify
 import sys
 import os
 import inspect
-from gi.repository import Gtk, Gdk, Notify
 import imghdr
 
-cmd_subfolder = os.path.realpath(os.path.abspath(os.path.join(os.path.split(inspect.getfile(inspect.currentframe()))[0], "modules")))
+cmd_subfolder = os.path.realpath (os.path.abspath (os.path.join (os.path.split (inspect.getfile (inspect.currentframe ()))[0], "modules")))
 if cmd_subfolder not in sys.path:
-    sys.path.insert(0, cmd_subfolder)
+    sys.path.insert (0, cmd_subfolder)
 
 import pyimgur
 
-appName = "Imgur Uploader"
+app_name = "Imgur Uploader"
 
-msgNotAnImage = "is not an image."
-msgNotAllowed = "is not an allowed file type. Skipping."
-msgUploading = "Uploading..."
-msgOneImage = "Your image has been uploaded."
-msgMultipleImages = "You images have been uploaded."
-msgClipboard = "The link has been copied to your clipboard!"
-msgFailed = "Upload failed, try again later."
+msg_not_an_image        = "is not an image."
+msg_not_allowed         = "is not an allowed file type. Skipping."
+msg_uploading           = "Uploading..."
+msg_one_image           = "Your image has been uploaded."
+msg_multiple_images     = "You images have been uploaded."
+msg_copied_to_clipboard = "The link has been copied to your clipboard!"
+msg_upload_failed       = "Upload failed, try again later."
 
 # Auth
-clientId = "c7544afd27262f4"
-clientSecret = "c47da11193c858b91372599685736fa8d24635ec"
+client_id     = "c7544afd27262f4"
+client_secret = "c47da11193c858b91372599685736fa8d24635ec"
 
 # Initialize PyImgur
-client = pyimgur.Imgur(client_id=clientId, client_secret=clientSecret)
+client = pyimgur.Imgur (client_id = client_id, client_secret = client_secret)
 
 # Notification icons
-iconInfo = "help-info"
-iconError = "error"
-iconUpload = "go-up"
+icon_info   = "help-info"
+icon_error  = "error"
+icon_upload = "go-up"
 
 
 class ImgurUploader:
-    def __init__(self, args):
+    def __init__ (self, args):
 
-        allowedTypes = ("jpeg", "jpg", "gif", "png", "apng", "tiff", "bmp", "pdf", "xcf")
+        allowed_types = ("jpeg", "jpg", "gif", "png", "apng", "tiff", "pdf", "xcf")
         images = []
 
         # Initialize the notification daemon
-        Notify.init(appName)
-        self.notification = Notify.Notification.new("", "", "")
+        Notify.init (app_name)
+        self.notification = Notify.Notification.new ("", "", "")
 
-        if len(args) == 1:
-            return
+        if len (args) == 1:
+            return "Missing file path"
         else:
             for file in args:
                 if file == args[0] or file == "":
                     continue
-                type = imghdr.what(file)
+                type = imghdr.what (file)
                 if not type:
-                    self.notify(appName, file + " " + msgNotAnImage, iconError)
-                    sys.exit()
+                    self.notify (app_name, "{} {}".format (file, msg_not_an_image), icon_error)
+                    sys.exit ()
                 else:
-                    if type not in allowedTypes:
-                        self.notify(appName, type + " " + msgNotAllowed + file, iconError)
-                        sys.exit()
+                    if type not in allowed_types:
+                        self.notify (app_name, "{} {}\n{}".format (type, msg_not_allowed, file), icon_error)
+                        sys.exit ()
                     else:
-                        images.append(file)
+                        images.append (file)
 
-        self.upload(images)
+        self.upload (images)
 
-    def notify(self, messageOne, messageTwo, icon, timeout=5000):
+    def notify (self, notification_title, notification_body, icon, timeout=5000):
         try:
-            self.notification.update(messageOne, messageTwo, icon)
-            self.notification.set_timeout(timeout)
-            self.notification.show()
+            self.notification.update (notification_title, notification_body, icon)
+            self.notification.set_timeout (timeout)
+            self.notification.show ()
         except:
             pass
 
-    def upload(self, images):
-        self.notify(appName, msgUploading, iconInfo)
-        ids = []
-        numOfImages = len(images)
-        currImage = 0
+    def upload (self, images):
+        self.notify (app_name, msg_uploading, icon_info)
+        imgur_ids = []
+        number_of_images = len (images)
+        current_image = 0
 
         for image in images:
             try:
-                uploadedImages = client.upload_image(image)
+                uploaded_images = client.upload_image (image)
             except:
-                self.notify(appName, msgFailed, iconError)
+                self.notify (app_name, msg_upload_failed, icon_error)
 
-            ids.append(uploadedImages.id)
+            imgur_ids.append (uploaded_images.id)
 
-            if numOfImages > 1:
-                currImage += 1
-                left = numOfImages - currImage
-                msgProgress = str(currImage) + " out of " + str(numOfImages) + " images uploaded, " + str(left) + " left."
-                self.notify(appName, msgProgress, iconUpload)
+            if number_of_images > 1:
+                current_image += 1
+                left = number_of_images - current_image
+                msg_progress = "{} out of {} images uploaded, {} left.".format (
+                    str (current_image), str (number_of_images), str (left))
+                self.notify (app_name, msg_progress, icon_upload)
 
-        if len(ids) > 1:
-            album = client.create_album(images=ids)
+        if len (imgur_ids) > 1:
+            album = client.create_album (images = imgur_ids)
             url = album.link
-            self.notify(msgMultipleImages, msgClipboard, iconInfo, 3000)
+            self.notify (msg_multiple_images, msg_copied_to_clipboard, icon_info, 3000)
         else:
-            url = uploadedImages.link
-            self.notify(msgOneImage, msgClipboard, iconInfo, 3000)
+            url = uploaded_images.link
+            self.notify (msg_one_image, msg_copied_to_clipboard, icon_info, 3000)
 
-        self.setClipboard(url)
+        self.set_clipboard (url)
 
-    def setClipboard(self, url):
-        display = Gdk.Display.get_default()
-        selection = Gdk.Atom.intern("CLIPBOARD", False)
-        clipboard = Gtk.Clipboard.get_for_display(display, selection)
-        clipboard.set_text(url, -1)
-        clipboard.store()
+    def set_clipboard (self, url):
+        display   = Gdk.Display.get_default ()
+        selection = Gdk.Atom.intern ("CLIPBOARD", False)
+        clipboard = Gtk.Clipboard.get_for_display (display, selection)
+        clipboard.set_text (url, -1)
+        clipboard.store ()
 
 if __name__ == '__main__':
-    uploader = ImgurUploader(sys.argv)
+    uploader = ImgurUploader (sys.argv)
