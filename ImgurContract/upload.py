@@ -29,7 +29,6 @@ icon_upload = "go-up"
 
 
 class ImgurUploader:
-
     def __init__(self, args):
         # Initialize the notification daemon
         Notify.init(app_name)
@@ -103,6 +102,7 @@ class ImgurUploader:
                 len(images), ommited)
         else:
             msg_uploading = "Uploading {} images".format(len(images))
+
         self.notify(app_name, msg_uploading, icon_info, False, 3000)
         imgur_ids = []
         number_of_images = len(images)
